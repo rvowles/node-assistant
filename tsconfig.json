@@ -1,0 +1,30 @@
+{
+	"compilerOptions": {
+		"target": "es2016",
+		"noImplicitAny": false,
+		"allowJs": true,
+		"removeComments": true,
+		"preserveConstEnums": true,
+		"sourceMap": true,
+		"module": "commonjs",
+		"outDir": "target",
+		"newLine": "lf",
+		"noEmitOnError": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true
+	},
+	"include": [
+		"app/**/*",
+		"spec/**/*",
+		"migrations/*"
+	],
+	"types": [
+		"node",
+		"mocha"
+	],
+	"exclude": [
+		"node_modules",
+		"target/dist"
+	]
+
+}

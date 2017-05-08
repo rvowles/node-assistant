@@ -1,0 +1,8 @@
+client_secret.json
+credentials.json
+*.iml
+.idea
+yarn.lock
+node_modules
+target
+resources

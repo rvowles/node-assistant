@@ -1,0 +1,72 @@
+= node-assistant
+
+== overview
+
+This is a nodejs + typescript version of the Assistant from Google (tm). It uses the alpha sdk to talk to it,
+so it may stop working with major revision changes.
+
+Particularly, this uses hotword detection. That is, it *must* use hotword detection. On starting it, you say "snowboy"
+and it will start listening to you, stream it to Google (tm) and stream the resulting audio.
+
+Want to use your own hotword? Go to https://snowboy.kitt.ai/[Snowboy] and record your own, replace it in the config file.
+At the moment, you can even have multiple hotwords. They all trigger the assistant.
+
+== installation
+
+I use yarn, but you should be able to use npm.
+
+so
+
+----
+npm|yarn install
+export VOICE_CONFIG=../../config.json
+----
+
+== building
+
+----
+npm|yarn build
+----
+
+== configuration
+
+Edit the config.json with your own client id + secret key as per the https://developers.google.com/assistant/sdk/prototype/getting-started-other-platforms/config-dev-project-and-account[assistant website].
+
+Then you need to cd into the target/app folder
+
+== running
+----
+cd target/app
+node index
+----
+
+You will get a url, which will give you a code. Enter that code on the command line and it will generate a file
+and save it.
+
+== recommended changes
+
+You can override the location of your credentials.json - it's location is in the config.json file. I would recommend
+having both of them outside the folder you are using for this code.
+
+There are a lot more configurable fields, it is based off the Java implementation of the Assistant. Go have a look at the client-config.ts
+file to see what you can change.
+
+== hotwords
+
+The hotword stuff makes a 'ding' if it triggers. Its one of the missing things on Home that annoys me (the lack of the
+audible acknowledgement). You can turn it off by leaving out the sound file. That also makes it more reliable on MacOS.
+
+=== what else?
+
+- I haven't tested this outside of MacOS, I will test it on a Raspberry Pi next.
+- node-speaker appears to have a bug on MacOS, it will occasionally seg-fault. Since this isn't a sensible deploy
+ scenario, i'm not too worried.
+- I want to add in support for the Google Speech API and hand-off to https://api.ai[api.ai]. It supports multiple hotwords,
+ so this is sensible.
+- Obviously I'd love to write spec tests for this, but I was more keen on getting it actually working.
+
+=== finally
+
+Really appreciate the team at Google for making this available, and the https://snowboy.kitt.ai/[Snowboy] team for making such a great library
+for hotword detection. If I ever make something commercial (and believe me, I only don't have the backing!) I would
+use you guys and pay in a heart beat.
