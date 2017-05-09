@@ -1,5 +1,7 @@
 = Setting up A Raspberry Pi 1 Model B+
 
+NOTICE: this actually works!
+
 - Burn the image with Etcher
 - create a file called "ssh" on it
 - boot up, ssh in with pi/raspberry

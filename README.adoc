@@ -5,6 +5,12 @@
 This is a nodejs + typescript version of the Assistant from Google (tm). It uses the alpha sdk to talk to it,
 so it may stop working with major revision changes.
 
+[NOTE]
+====
+If you haven't come across Typescript before, it is just sugar on ES.next. If you compile this, it comes down to es6,
+so you can just use that and start modifying it if you like.
+====
+
 Particularly, this uses hotword detection. That is, it *must* use hotword detection. On starting it, you say "snowboy"
 and it will start listening to you, stream it to Google (tm) and stream the resulting audio.
 
@@ -24,8 +30,14 @@ export VOICE_CONFIG=../../config.json
 
 == building
 
+with yarn use:
 ----
-npm|yarn build
+yarn build
+----
+
+with npm use
+----
+npm run copy-js && npm run tsc
 ----
 
 == configuration
