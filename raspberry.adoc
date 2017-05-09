@@ -1,0 +1,21 @@
+= Setting up A Raspberry Pi 1 Model B+
+
+- Burn the image with Etcher
+- create a file called "ssh" on it
+- boot up, ssh in with pi/raspberry
+- Go to the nodejs https://nodejs.org/en/blog/[news site] and download the latest Armv6 binary
+
+----
+sudo apt-get update
+sudo apt-get install git libatlas-base-dev libasound2
+wget https://nodejs.org/dist/v7.10.0/node-v7.10.0-linux-armv6l.tar.xz
+tar xf node-v7.10.0-linux-armv6l.tar.xz
+mv node-v7.10.0-linux-armv6l /opt/node
+sudo vi /etc/bash.bashrc
+--> add export PATH=$PATH:/opt/node/bin, save with :x
+source /etc/bash.bashrc
+----
+
+configure as per: https://developers.google.com/assistant/sdk/prototype/getting-started-pi-python/configure-audio[Configure Audio]
+
+
