@@ -103,7 +103,7 @@ export class Authentication extends EventEmitter {
 					process.exit(-1);
 				}
 
-				console.log('using code ', code, 'to get tokens');
+				self.config.debug('using code ', code, 'to get tokens');
 
 				self.oauth2Client.getToken(code, function (err, tokens) {
 					// Now tokens contains an access_token and an optional refresh_token. Save them.

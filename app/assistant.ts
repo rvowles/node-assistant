@@ -136,10 +136,10 @@ export class AssistantClient extends EventEmitter {
 		const size = this.config.assistant.chunkSize;
 		
 		audioPipe._write = (chunk, enc, next) => {
-			console.log('audio');
+			this.config.debug('audio');
 			
 			if (!chunk.length) {
-				console.log('ignoring');
+				this.config.debug('ignoring');
 				return;
 			}
 
@@ -150,7 +150,7 @@ export class AssistantClient extends EventEmitter {
 				const end = ((count+1) * size) > chunk.length ? chunk.length : ((count+1) * size);
 				const bit = new Uint8Array(chunk.slice(count * size, end));
 
-				console.log(bit.length);
+				// console.log(bit.length);
 				converseRequest.setAudioIn(bit);
 				try {
 					converseStream.write(converseRequest);
@@ -163,7 +163,7 @@ export class AssistantClient extends EventEmitter {
 		};
 
 		audioPipe.on('end', () => {
-			console.log('end of audio');
+			this.config.debug('end of audio');
 			converseStream.end();
 		});
 
@@ -180,16 +180,16 @@ export class AssistantClient extends EventEmitter {
 		
 		writer.on('end', (err) => {
 			if (err) {
-				console.error('failed ', err);
+				this.config.debug('failed ', err);
 			} else {
 				this.finished = true;
 				this.speaker.setSpeakerFinished(true);
-				console.log('finished ');
+				this.config.debug('finished ');
 				this.emit('end');
 			}
 		});
 
-		console.log('write audio config');
+		this.config.debug('write audio config');
 		writer.write(this.createAudioConfig());
 		return writer;
 	}
@@ -205,11 +205,11 @@ export class AssistantClient extends EventEmitter {
 			this.emit('speaker-closed');
 		});
 
-		console.log('starting to record');
-		const audio = record.start({verbose: true});
+		console.log('starting assistant');
+		const audio = record.start({verbose: this.config.verbose, recordProgram: this.config.record.programme});
 
 		audio.on('end', () => {
-			console.log('closing conversation');
+			this.config.debug('closing conversation');
 			record.stop();
 			converseStream.end();
 		});

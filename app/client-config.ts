@@ -36,9 +36,16 @@ export class AudioConfig {
 	public channels : number;
 }
 
+export class RecordConfig {
+	public programme : string;
+}
+
 export class Config {
+	public debug : any; // comes from index.ts
+	public verbose : boolean;
 	public authentication: AuthenticationConfig;
 	public assistant : AssistantConfig;
 	public audio : AudioConfig;
+	public record : RecordConfig;
 	public hotwords : HotwordsConfig;
 }

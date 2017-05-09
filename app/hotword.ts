@@ -23,7 +23,7 @@ export class Hotword extends EventEmitter {
 		} else if (config.hotwords && config.hotwords.hotwords && config.hotwords.hotwords.length > 0) {
 			this.configureModelsWithSound(config.hotwords.hotwords);
 		} else {
-			console.error('Bad hotwords config %j', config.hotwords);
+			this.config.debug('Bad hotwords config %j', config.hotwords);
 			throw new Error("Must have keywords defined");
 		}
 
@@ -34,7 +34,7 @@ export class Hotword extends EventEmitter {
 		let counter = 0;
 
 		for(let hotword of hotwordFiles) {
-			console.log('adding hotword ', hotword);
+			this.config.debug('adding hotword ', hotword);
 
 			this.models.add({
 				file: hotword,
@@ -50,7 +50,7 @@ export class Hotword extends EventEmitter {
 		hotwords.forEach((val, index) => {
 			const name = 'internal' + index;
 
-			console.log('adding hotword ', val.hotwordFile);
+			this.config.debug('adding hotword ', val.hotwordFile);
 
 			this.models.add({
 				file: val.hotwordFile,
@@ -72,16 +72,16 @@ export class Hotword extends EventEmitter {
 			audioGain: 2.0
 		});
 
-		this.detector.on('silence', function () {
-			console.log('silence');
+		this.detector.on('silence', () => {
+			this.config.debug('silence');
 		});
 
-		this.detector.on('sound', function () {
-			console.log('sound');
+		this.detector.on('sound', () => {
+			this.config.debug('sound');
 		});
 
-		this.detector.on('error', function () {
-			console.log('error');
+		this.detector.on('error', () => {
+			this.config.debug('error');
 		});
 
 		const self = this;
@@ -124,7 +124,8 @@ export class Hotword extends EventEmitter {
 
 		this.mic = record.start({
 			threshold: 0,
-			verbose: true
+			verbose: this.config.verbose,
+			recordProgram: this.config.record.programme
 		});
 
 		this.mic.pipe(this.detector);

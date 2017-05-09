@@ -1,9 +1,10 @@
-import {Config} from './client-config';
+import {Config, RecordConfig} from './client-config';
 import GoogleAuth = require('google-auth-library');
 import {AssistantClient} from './assistant';
 import {Hotword} from './hotword';
 import {Authentication} from './authentication';
 import fs = require('fs');
+const debug = require('debug');
 
 let allConfig;
 
@@ -14,6 +15,17 @@ if (process.env.VOICE_CONFIG) {
 	process.exit(-1);
 } else {
 	allConfig = <Config>require('./config.json');
+}
+
+allConfig.debug = debug('node-assistant');
+
+if (process.env.DEBUG === 'node-assistant') {
+	allConfig.verbose = true; // for other logging
+}
+
+if (!allConfig.record) {
+	allConfig.record = new RecordConfig();
+	allConfig.record.programme = 'rec';
 }
 
 const hotword = new Hotword(allConfig);
@@ -27,7 +39,7 @@ auth.on('oauth-ready', (oauth2Client) => {
 
 	hotword.on('hotword', (match, index) => {
 		process.nextTick(() => {
-			console.log('assistant');
+			allConfig.debug('assistant');
 			assistant.requestAssistant();
 		});
 	});
@@ -50,10 +62,3 @@ auth.on('oauth-ready', (oauth2Client) => {
 });
 
 auth.loadCredentials();
-
-
-
-
-
-
-

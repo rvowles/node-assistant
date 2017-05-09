@@ -40,6 +40,16 @@ with npm use
 npm run copy-js && npm run tsc
 ----
 
+== debugging
+
+This uses node-debug - so set the environment variable
+
+----
+DEBUG=node-assistant node index
+----
+
+which tells it to turn debugging on.
+
 == configuration
 
 Edit the config.json with your own client id + secret key as per the https://developers.google.com/assistant/sdk/prototype/getting-started-other-platforms/config-dev-project-and-account[assistant website].
