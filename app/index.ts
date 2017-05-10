@@ -1,9 +1,10 @@
-import {Config, RecordConfig} from './client-config';
+import {Config, RecordConfig, HotwordType} from './client-config';
 import GoogleAuth = require('google-auth-library');
 import {AssistantClient} from './assistant';
 import {Hotword} from './hotword';
 import {Authentication} from './authentication';
 import fs = require('fs');
+import {SnowboyHotword} from './snowboy';
 const debug = require('debug');
 
 let allConfig;
@@ -29,29 +30,22 @@ if (!allConfig.record) {
 }
 
 const hotword = new Hotword(allConfig);
+const snowboy = new SnowboyHotword(null, allConfig);
 
 const auth = new Authentication(allConfig);
 
 auth.on('oauth-ready', (oauth2Client) => {
 	console.log('We have configured credentials, now listening for hotword.');
 
-	const assistant = new AssistantClient(allConfig, oauth2Client);
+	hotword.configureHotwords(oauth2Client);
 
-	hotword.on('hotword', (match, index) => {
-		process.nextTick(() => {
-			allConfig.debug('assistant');
-			assistant.requestAssistant();
-		});
+	hotword.on('hotword-complete', () => {
+		snowboy.start();
 	});
 
-	hotword.start();
-
-	assistant.on('speaker-closed', () => {
-		// we seem to get this callback slightly before the speaker has finished
-		// which can cause it to be cut off
-		setTimeout(() => {
-			hotword.start();
-		}, 500);
+	snowboy.start();
+	snowboy.on('hotword', (hotword, index) => {
+		hotword.hotwordDetected(hotword, index);
 	});
 
 	console.log('press enter to finish');

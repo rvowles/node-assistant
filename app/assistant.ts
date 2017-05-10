@@ -4,7 +4,7 @@ const record = require('node-record-lpcm16');
 import grpc = require('grpc');
 const EmbeddedAssistantClient = require('./google/assistant/embedded/v1alpha1/embedded_assistant_grpc_pb').EmbeddedAssistantClient;
 import fs = require('fs');
-import {Config, AssistantConfig} from './client-config';
+import {Config, AssistantConfig, HotwordConfig} from './client-config';
 
 import {
 	AudioInConfig, AudioOutConfig, ConverseState,
@@ -12,9 +12,10 @@ import {
 } from './google/assistant/embedded/v1alpha1/embedded_assistant_pb';
 import {SpeakerSequencer} from './speaker-sequencer';
 import {EventEmitter} from 'events';
+import {BotInterface} from './bot-interface';
 
 
-export class AssistantClient extends EventEmitter {
+export class AssistantClient extends EventEmitter implements BotInterface{
 	private currentConversationState: Uint8Array;
 	private callCreds;
 	private assistant;
@@ -194,7 +195,7 @@ export class AssistantClient extends EventEmitter {
 		return writer;
 	}
 
-	public requestAssistant() {
+	public process(hotword : HotwordConfig) {
 		const converseStream = this.setupConversationStream();
 		const audioRequestStream = this.setupConversationAudioRequestStream(converseStream);
 
@@ -202,7 +203,7 @@ export class AssistantClient extends EventEmitter {
 
 		// propagate this out
 		this.speaker.on('speaker-closed', () => {
-			this.emit('speaker-closed');
+			this.emit('hotword-complete');
 		});
 
 		console.log('starting assistant');

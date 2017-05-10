@@ -1,0 +1,49 @@
+
+For typescript support, install this https://github.com/improbable-eng/ts-protoc-gen[the typescript/grpc] generator from Improbable Engineering.
+
+in yarn it is
+
+----
+yarn global add ts-protoc-gen
+----
+
+=== common apis
+
+----
+
+----
+
+=== cloud speech apis
+
+for the Cloud Speech APIs
+----
+CLOUD_SPEECH_APIS="google/cloud/speech/v1/cloud_speech.proto google/api/annotations.proto google/longrunning/operations.proto google/rpc/status.proto"
+----
+
+=== assistant apis
+
+----
+ASSISTANT_APIS="google/api/annotations.proto google/api/http.proto google/rpc/status.proto google/assistant/embedded/v1alpha1/embedded_assistant.proto"
+----
+
+=== just js
+for pure js static apis, this is required:
+
+the "js_out" generates the classes, the grpc_out generates the actual service you need to use to connect.
+
+----
+grpc_tools_node_protoc --js_out=import_style=commonjs,binary:generated --grpc_out=generated \
+--plugin=protoc-gen-grpc=`which grpc_tools_node_protoc_plugin` $CLOUD_SPEECH_APIS
+----
+
+=== typescript + js
+for a mix of Typescript and JS, this is required. You need to delete the _service.ts files because they are simply wrong.
+
+----
+grpc_tools_node_protoc --js_out=import_style=commonjs,binary:generated --grpc_out=generated --plugin=protoc-gen-ts=/usr/local/bin/protoc-gen-ts \
+ --ts_out service=true:generated  \
+ --plugin=protoc-gen-grpc=`which grpc_tools_node_protoc_plugin` $CLOUD_SPEECH_APIS
+
+find . -name '*_service.ts' | xargs rm
+----
+

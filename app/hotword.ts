@@ -1,19 +1,19 @@
 
-import {Config, HotwordConfig} from './client-config';
-const record = require('node-record-lpcm16');
-const Detector = require('snowboy').Detector;
-const Models = require('snowboy').Models;
+import {Config, HotwordConfig, HotwordType} from './client-config';
 const Speaker = require('speaker');
 import fs = require('fs');
 import {EventEmitter} from 'events';
+import {BotInterface} from './bot-interface';
+import {CloudSpeechOrchestrator} from './cloud_speech';
+import {AssistantClient} from './assistant';
 
 type HotwordMap = { [K in string]: HotwordConfig };
+type HotwordBot = { [Z in string]: BotInterface };
 
 export class Hotword extends EventEmitter {
-	private models = new Models();
-	private detector;
 	private matching : HotwordMap = {};
-	private mic;
+	private bots : HotwordBot = {};
+	private counter : number;
 
 	constructor(private config: Config) {
 		super();
@@ -26,113 +26,84 @@ export class Hotword extends EventEmitter {
 			this.config.debug('Bad hotwords config %j', config.hotwords);
 			throw new Error("Must have keywords defined");
 		}
-
-		this.setup();
 	}
 
 	private configureModels(hotwordFiles: string[]) {
-		let counter = 0;
-
 		for(let hotword of hotwordFiles) {
 			this.config.debug('adding hotword ', hotword);
 
-			this.models.add({
-				file: hotword,
-				sensitivity: '0.5',
-				hotwords : 'internal' + counter
-			});
+			const keyName = 'internal' + this.counter;
 
-			counter ++;
+			const c = new HotwordConfig();
+			c.type = HotwordType.ASSISTANT;
+			c.name = keyName;
+
+			this.matching[keyName] = c;
+
+			this.counter ++;
 		}
 	}
 
 	private configureModelsWithSound(hotwords: Array<HotwordConfig>) {
 		hotwords.forEach((val, index) => {
+
 			const name = 'internal' + index;
 
 			this.config.debug('adding hotword ', val.hotwordFile);
 
-			this.models.add({
-				file: val.hotwordFile,
-				sensitivity: '0.5',
-				hotwords : name
-			});
-
-			if (val.soundFile) {
-				this.matching[name] = val;
-			}
+			this.matching[name] = val;
 		});
 	}
 
+	public hotwordDetected(hotword, index) {
+		const match = this.matching[hotword];
 
-	private setup() {
-		this.detector = new Detector({
-			resource: "resources/common.res",
-			models: this.models,
-			audioGain: 2.0
-		});
-
-		this.detector.on('silence', () => {
-			this.config.debug('silence');
-		});
-
-		this.detector.on('sound', () => {
-			this.config.debug('sound');
-		});
-
-		this.detector.on('error', () => {
-			this.config.debug('error');
-		});
-
-		const self = this;
-
-		this.detector.on('hotword', function (index, hotword) {
-			self.mic.unpipe();
-			record.stop();
-
-			console.log('hotword', index, hotword);
-
-			const match = self.matching[hotword];
-
-			if (match && match.soundFile) {
-				// we expect this criteria for sounds that play on trigger
-				const speaker = new Speaker({
-					channels: 1,
-					bitDepth: 16,
-					sampleRate: 16000
-				});
-				const sound = fs.createReadStream(match.soundFile);
-				speaker.on('close', () => {
-					self.emit('hotword', match, index);
-				});
-
-				sound.pipe(speaker);
-			} else if (match) {
-				self.emit('hotword', match, index);
-			} else {
-				self.emit('hotword');
-			}
-
-			process.nextTick(() => {
-				self.detector.reset();
+		if (match && match.soundFile) {
+			// we expect this criteria for sounds that play on trigger
+			const speaker = new Speaker({
+				channels: 1,
+				bitDepth: 16,
+				sampleRate: 16000
 			});
+			const sound = fs.createReadStream(match.soundFile);
+			speaker.on('close', () => {
+				this.dispatch(match, hotword);
+			});
+
+			sound.pipe(speaker);
+		} else if (match) {
+			this.dispatch(match, hotword);
+		} else {
+			this.dispatch(new HotwordConfig(), hotword);
+		}
+	}
+
+	private dispatch(match : HotwordConfig, hotword : string) {
+		process.nextTick(() => {
+			this.bots[hotword].process(match);
 		});
 	}
 	
-	public start() {
-		// this.setup();
+	public configureHotwords(oauth2Client) {
+		for(let key of Object.keys(this.matching)) {
+			let newBot : BotInterface;
+			let ee : EventEmitter;
 
-		this.mic = record.start({
-			threshold: 0,
-			verbose: this.config.verbose,
-			recordProgram: this.config.record.programme
-		});
+			if (this.matching[key].type === HotwordType.CLOUD_SPEECH) {
+				newBot = ee = new CloudSpeechOrchestrator(this.config, oauth2Client);
+			} else {
+				newBot = ee = new AssistantClient(this.config, oauth2Client);
+			}
 
-		this.mic.pipe(this.detector);
+			this.bots[key] = newBot;
 
-		console.log('waiting for hotword');
+			ee.on('bot-complete', () => {
+				setTimeout(() => {
+					this.emit('hotword-complete');
+				}, 500);
+			});
+		}
 	}
-
 }
 
 

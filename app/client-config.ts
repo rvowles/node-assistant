@@ -12,10 +12,24 @@ export class AuthenticationConfig {
 	public maxDelayBeforeRefresh: number;
 }
 
+export class ApiAiConfig {
+	public client_access_token : string;
+	public latitude : number;
+	public longitude : number;
+	public timezone : string;
+}
+
+export enum HotwordType {
+	ASSISTANT = <any>'ASSISTANT',
+	CLOUD_SPEECH = <any>'CLOUD_SPEECH'
+}
+
 export class HotwordConfig {
 	public hotwordFile : string;
 	public soundFile : string;
 	public name : string;
+	public type : HotwordType;
+	public apiAiConfig : ApiAiConfig;
 }
 
 export class HotwordsConfig {

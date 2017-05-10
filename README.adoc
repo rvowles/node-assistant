@@ -7,6 +7,11 @@ so it may stop working with major revision changes.
 
 [NOTE]
 ====
+Master is not assured to work, so please use the releases if you have trouble.
+====
+
+[NOTE]
+====
 If you haven't come across Typescript before, it is just sugar on ES.next. If you compile this, it comes down to es6,
 so you can just use that and start modifying it if you like.
 ====
@@ -80,9 +85,10 @@ audible acknowledgement). You can turn it off by leaving out the sound file. Tha
 
 === what else?
 
-- I haven't tested this outside of MacOS, I will test it on a Raspberry Pi next.
+- I have tested this on raspberry pi model 1 b and mac os x.
+- node-speaker appears to not cope too well with the audio stream on raspberry pi
 - node-speaker appears to have a bug on MacOS, it will occasionally seg-fault. Since this isn't a sensible deploy
- scenario, i'm not too worried.
+ scenario, i'm not too worried. This particularly occurs if you use a "ding" after the hotword is recognized.
 - I want to add in support for the Google Speech API and hand-off to https://api.ai[api.ai]. It supports multiple hotwords,
  so this is sensible.
 - Obviously I'd love to write spec tests for this, but I was more keen on getting it actually working.
