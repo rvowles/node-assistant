@@ -4,11 +4,20 @@ const Speaker = require('speaker');
 import fs = require('fs');
 import {EventEmitter} from 'events';
 import {BotInterface} from './bot-interface';
-import {CloudSpeechOrchestrator} from './cloud_speech';
+import {CloudSpeechOrchestrator} from './cloud-speech';
 import {AssistantClient} from './assistant';
 
 type HotwordMap = { [K in string]: HotwordConfig };
 type HotwordBot = { [Z in string]: BotInterface };
+
+export class HotwordKey {
+	public config : HotwordConfig;
+	public key : string;
+
+	constructor(init?:Partial<HotwordKey>) {
+		Object.assign(this, init);
+	}
+}
 
 export class Hotword extends EventEmitter {
 	private matching : HotwordMap = {};
@@ -26,6 +35,17 @@ export class Hotword extends EventEmitter {
 			this.config.debug('Bad hotwords config %j', config.hotwords);
 			throw new Error("Must have keywords defined");
 		}
+	}
+
+	public getHotwords() : Array<HotwordKey> {
+		// oh for Object.values
+		const hotwords = [];
+
+		for(let key of Object.keys(this.matching)) {
+			hotwords.push(new HotwordKey({config:this.matching[key], key:key}));
+		}
+
+		return hotwords;
 	}
 
 	private configureModels(hotwordFiles: string[]) {
@@ -46,6 +66,8 @@ export class Hotword extends EventEmitter {
 
 	private configureModelsWithSound(hotwords: Array<HotwordConfig>) {
 		hotwords.forEach((val, index) => {
+
+			console.log('registering ', val);
 
 			const name = 'internal' + index;
 
@@ -89,6 +111,7 @@ export class Hotword extends EventEmitter {
 			let newBot : BotInterface;
 			let ee : EventEmitter;
 
+			console.log('key ', key, this.matching[key], this.matching[key].type === HotwordType.CLOUD_SPEECH);
 			if (this.matching[key].type === HotwordType.CLOUD_SPEECH) {
 				newBot = ee = new CloudSpeechOrchestrator(this.config, oauth2Client);
 			} else {

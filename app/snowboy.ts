@@ -8,6 +8,10 @@ import fs = require('fs');
 export class SnowboyModel {
 	public hotword: string;
 	public file: string;
+
+	constructor(init?:Partial<SnowboyModel>) {
+		Object.assign(this, init);
+	}
 }
 
 export class SnowboyHotword extends EventEmitter {

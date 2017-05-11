@@ -10,7 +10,8 @@
 				{
 					"hotwordFile":"resources/snowboy.umdl",
 					"soundFile": "resources/ding.wav",
-					"name": "snowboy"
+					"name": "snowboy",
+					"type": "CLOUD_SPEECH"
 				}
 			]
 		}

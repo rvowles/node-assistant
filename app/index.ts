@@ -1,10 +1,9 @@
 import {Config, RecordConfig, HotwordType} from './client-config';
 import GoogleAuth = require('google-auth-library');
-import {AssistantClient} from './assistant';
 import {Hotword} from './hotword';
 import {Authentication} from './authentication';
 import fs = require('fs');
-import {SnowboyHotword} from './snowboy';
+import {SnowboyHotword, SnowboyModel} from './snowboy';
 const debug = require('debug');
 
 let allConfig;
@@ -30,13 +29,25 @@ if (!allConfig.record) {
 }
 
 const hotword = new Hotword(allConfig);
-const snowboy = new SnowboyHotword(null, allConfig);
+
+// now make the model to match the hotwords with snowboy
+const snowboyModel = [];
+hotword.getHotwords().forEach(val => {
+	const model = new SnowboyModel({hotword: val.key, file: val.config.hotwordFile});
+	snowboyModel.push(model);
+});
+
+const snowboy = new SnowboyHotword(snowboyModel, allConfig);
+snowboy.on('hotword', (word, index) => {
+	hotword.hotwordDetected(word, index);
+});
 
 const auth = new Authentication(allConfig);
 
 auth.on('oauth-ready', (oauth2Client) => {
 	console.log('We have configured credentials, now listening for hotword.');
 
+	// create the clients for each hotword
 	hotword.configureHotwords(oauth2Client);
 
 	hotword.on('hotword-complete', () => {
@@ -44,9 +55,6 @@ auth.on('oauth-ready', (oauth2Client) => {
 	});
 
 	snowboy.start();
-	snowboy.on('hotword', (hotword, index) => {
-		hotword.hotwordDetected(hotword, index);
-	});
 
 	console.log('press enter to finish');
 	process.stdin.resume();

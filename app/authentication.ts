@@ -36,7 +36,7 @@ export class Authentication extends EventEmitter {
 		}
 
 		if (!auth.scope && !auth.scopes) {
-			auth.scopes = ['https://www.googleapis.com/auth/assistant-sdk-prototype'];
+			auth.scopes = ['https://www.googleapis.com/auth/assistant-sdk-prototype', 'https://www.googleapis.com/auth/cloud-platform'];
 		} else if (!auth.scopes) {
 			auth.scopes = [auth.scope];
 		}
