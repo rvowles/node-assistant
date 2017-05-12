@@ -203,7 +203,7 @@ export class AssistantClient extends EventEmitter implements BotInterface{
 
 		// propagate this out
 		this.speaker.on('speaker-closed', () => {
-			this.emit('hotword-complete');
+			this.emit('bot-complete');
 		});
 
 		console.log('starting assistant');

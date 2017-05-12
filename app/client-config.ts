@@ -12,6 +12,13 @@ export class AuthenticationConfig {
 	public maxDelayBeforeRefresh: number;
 }
 
+export class AmazonPollyConfig {
+	public region : string;
+	public voiceId : string;
+	public accessKeyId : string;
+	public secretAccessKey : string;
+}
+
 export class ApiAiConfig {
 	public client_access_token : string;
 	public latitude : number;
@@ -62,4 +69,5 @@ export class Config {
 	public audio : AudioConfig;
 	public record : RecordConfig;
 	public hotwords : HotwordsConfig;
+	public polly : AmazonPollyConfig;
 }

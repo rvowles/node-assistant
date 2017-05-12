@@ -1,10 +1,11 @@
 
 
-import {Config, HotwordConfig} from './client-config';
+import {Config, HotwordConfig, ApiAiConfig} from './client-config';
 import {EventEmitter} from 'events';
 import {BotInterface} from './bot-interface';
 import grpc = require('grpc');
 import fs = require('fs');
+import request = require('request');
 const record = require('node-record-lpcm16');
 import {
 	StreamingRecognizeResponse, StreamingRecognizeRequest,
@@ -12,14 +13,20 @@ import {
 } from './google/cloud/speech/v1/cloud_speech_pb';
 import AudioEncoding = RecognitionConfig.AudioEncoding;
 import {Writable} from 'stream';
+import {TextToSpeech} from './text-to-speech';
 const SpeechClient = require('./google/cloud/speech/v1/cloud_speech_grpc_pb').SpeechClient;
 
-export class CloudSpeechOrchestrator extends EventEmitter implements BotInterface {
-	private speechClient;
-	private callCreds;
-	private finished : boolean;
+let sessionId = 1;
 
-	constructor(private config: Config, private oauth2Client) {
+export class CloudSpeechOrchestrator extends EventEmitter implements BotInterface {
+	private speechClient : any;
+	private callCreds : any;
+	private finished : boolean;
+	private context : any;
+	private sessionId : string;
+	private text : string;
+
+	constructor(private config: Config, private oauth2Client, private tts : TextToSpeech) {
 		super();
 
 		this.setupCloudSpeechClient();
@@ -57,13 +64,18 @@ export class CloudSpeechOrchestrator extends EventEmitter implements BotInterfac
 				console.log('is final?: ', val.getIsFinal());
 				final = final || val.getIsFinal();
 				console.log('alternatives: ' );
+				this.text = null;
 				val.getAlternativesList().forEach(alt => {
+					if (!this.text) {
+						this.text = alt.getTranscript();
+					}
+
 					console.log(" -- ", alt.getTranscript(), " (confidence " + alt.getConfidence() + ")");
 				})
 			});
 		}
 
-		if (final) {
+		if (final && !this.finished) {
 			this.finished = true;
 			this.emit('end');
 		}
@@ -128,8 +140,7 @@ export class CloudSpeechOrchestrator extends EventEmitter implements BotInterfac
 
 		return audioPipe;
 	}
-
-
+	
 	private setupCloudSpeechStream() {
 		const options = {};
 		const writer = this.speechClient.streamingRecognize(this.callCreds, options);
@@ -141,7 +152,7 @@ export class CloudSpeechOrchestrator extends EventEmitter implements BotInterfac
 		writer.on('end', (err) => {
 			if (err) {
 				this.config.debug('failed ', err);
-			} else {
+			} else if (!this.finished) {
 				this.finished = true;
 				// this.speaker.setSpeakerFinished(true);
 				this.config.debug('finished ');
@@ -154,7 +165,70 @@ export class CloudSpeechOrchestrator extends EventEmitter implements BotInterfac
 		return writer;
 	}
 
+	private apiAi(apiConfig : ApiAiConfig, text : string) {
+		if (!this.context) {
+			this.context = [];
+		}
+		if (!this.sessionId) {
+			this.sessionId = sessionId.toString();
+			sessionId ++;
+		}
+
+		const messageBody = <any>{
+			query: text,
+			contexts: this.context,
+			sessionId: this.sessionId,
+			lang: 'en'
+		};
+
+		if (apiConfig.timezone) {
+			messageBody.timezone = apiConfig.timezone;
+		}
+
+		if (apiConfig.latitude && apiConfig.longitude) {
+			messageBody.location = {longitude: apiConfig.longitude, latitude: apiConfig.latitude};
+		}
+
+		const options = {
+			method: 'POST',
+			url: 'https://api.api.ai/v1/query?v=20150910',
+			auth: {
+				bearer: apiConfig.client_access_token
+			},
+			json: true,
+			body: messageBody
+		};
+
+		console.log('making request');
+		request(options, (err, resp, respBody) => {
+			if (err) {
+				console.log('failed ', err);
+				this.emit('bot-complete');
+			} else {
+				if (respBody.status && respBody.status.code === 200) {
+					this.context = respBody.result.contexts;
+					const text = respBody.result.fulfillment.speech || respBody.result.fulfillment.displayText;
+
+					console.log('text is ', text, this.tts == null);
+
+					if (this.tts) {
+						this.tts.speak(text, () => {
+							this.emit('bot-complete');
+						});
+					}  else {
+						this.emit('bot-complete');
+					}
+				}
+			}
+
+			// this oculd cause a loop of polly says the hotword
+			this.emit('bot-complete');
+		});
+	}
+
 	process(hotword: HotwordConfig) {
+		this.finished = false;
+
 		const converseStream = this.setupCloudSpeechStream();
 		const audioRequestStream = this.setupConversationAudioRequestStream(converseStream);
 
@@ -170,7 +244,16 @@ export class CloudSpeechOrchestrator extends EventEmitter implements BotInterfac
 			this.config.debug('final utterance');
 			record.stop();
 			converseStream.end();
-			this.emit('hotword-complete');
+			
+			if (this.text === 'shutdown') {
+				process.exit(0);
+			}
+
+			if (hotword.apiAiConfig) {
+				this.apiAi(hotword.apiAiConfig, this.text);
+			} else {
+				this.emit('bot-complete');
+			}
 		});
 
 		audio.pipe(audioRequestStream);

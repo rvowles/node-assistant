@@ -4,6 +4,7 @@ import {Hotword} from './hotword';
 import {Authentication} from './authentication';
 import fs = require('fs');
 import {SnowboyHotword, SnowboyModel} from './snowboy';
+import {AmazonPolly} from './polly';
 const debug = require('debug');
 
 let allConfig;
@@ -28,7 +29,9 @@ if (!allConfig.record) {
 	allConfig.record.programme = 'rec';
 }
 
-const hotword = new Hotword(allConfig);
+const polly = allConfig.polly ? new AmazonPolly(allConfig) : null;
+
+const hotword = new Hotword(allConfig, polly);
 
 // now make the model to match the hotwords with snowboy
 const snowboyModel = [];
@@ -43,6 +46,7 @@ snowboy.on('hotword', (word, index) => {
 });
 
 const auth = new Authentication(allConfig);
+
 
 auth.on('oauth-ready', (oauth2Client) => {
 	console.log('We have configured credentials, now listening for hotword.');

@@ -6,6 +6,7 @@ import {EventEmitter} from 'events';
 import {BotInterface} from './bot-interface';
 import {CloudSpeechOrchestrator} from './cloud-speech';
 import {AssistantClient} from './assistant';
+import {TextToSpeech} from './text-to-speech';
 
 type HotwordMap = { [K in string]: HotwordConfig };
 type HotwordBot = { [Z in string]: BotInterface };
@@ -24,7 +25,7 @@ export class Hotword extends EventEmitter {
 	private bots : HotwordBot = {};
 	private counter : number;
 
-	constructor(private config: Config) {
+	constructor(private config: Config, private tts : TextToSpeech) {
 		super();
 
 		if (config.hotwords && config.hotwords.hotwordFiles && config.hotwords.hotwordFiles.length > 0) {
@@ -113,7 +114,7 @@ export class Hotword extends EventEmitter {
 
 			console.log('key ', key, this.matching[key], this.matching[key].type === HotwordType.CLOUD_SPEECH);
 			if (this.matching[key].type === HotwordType.CLOUD_SPEECH) {
-				newBot = ee = new CloudSpeechOrchestrator(this.config, oauth2Client);
+				newBot = ee = new CloudSpeechOrchestrator(this.config, oauth2Client, this.tts);
 			} else {
 				newBot = ee = new AssistantClient(this.config, oauth2Client);
 			}
