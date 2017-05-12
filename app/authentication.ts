@@ -80,8 +80,6 @@ export class Authentication extends EventEmitter {
 		}
 
 		if (!this.credentials || !this.credentials.access_token) {
-			const self = this;
-
 			const url = this.oauth2Client.generateAuthUrl({
 				access_type: 'offline',
 
@@ -103,14 +101,14 @@ export class Authentication extends EventEmitter {
 					process.exit(-1);
 				}
 
-				self.config.debug('using code ', code, 'to get tokens');
+				this.config.debug('using code ', code, 'to get tokens');
 
-				self.oauth2Client.getToken(code, function (err, tokens) {
+				this.oauth2Client.getToken(code, (err, tokens) => {
 					// Now tokens contains an access_token and an optional refresh_token. Save them.
 					console.log('got tokens %j', tokens);
 
 					if (!err) {
-						self.saveCredentials(<Credentials>tokens);
+						this.saveCredentials(<Credentials>tokens);
 						this.emit('oauth-ready', this.oauth2Client);
 					}
 				});
