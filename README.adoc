@@ -2,6 +2,8 @@
 
 == overview
 
+NB: there is a much more interesting implementation on the dev branch
+
 This is a nodejs + typescript version of the Assistant from Google (tm). It uses the alpha sdk to talk to it,
 so it may stop working with major revision changes.
 
